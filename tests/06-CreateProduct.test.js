@@ -99,6 +99,7 @@ describe('<CreateProduct/>', () => {
       });
 
       // Revisen bien que tipo de dato utilizamos en cada propiedad.
+      // A criollo, crea un useState para los values recibido de los input.
       it('Deberia inicializar de forma correcta los valores del', () => {
          expect(useStateSpy).toHaveBeenCalledWith({
             name: '',
@@ -237,7 +238,6 @@ describe('<CreateProduct/>', () => {
             </Provider>,
          );
       });
-
       afterEach(() => jest.restoreAllMocks());
 
       it('Debe disparar la acción createProduct con los datos del state cuando se haga submit del form.', () => {

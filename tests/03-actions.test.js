@@ -31,10 +31,13 @@ describe('Actions', () => {
     apiMock.get('/products').reply(200, data.products);
 
     // "/products/:id" => Retorna un producto matcheado por su id
-    apiMock.get(/\/products\/\d/).reply(200, (uri, requestBody) => {
-      const idStr = uri.split('/').pop();
-      const id = Number(idStr);
-      return data.products.find((product) => product.id === id);
+    let id = null;
+    apiMock.get((uri)=>{
+      id = Number(uri.split('/').pop()); // Number('undefined') => NaN
+      return !!id
+    })
+    .reply(200, (uri, requestBody) => {
+      return data.products.find((product) => product.id === id) || {};
     });
   });
 

@@ -20,11 +20,12 @@ axios.defaults.adapter = require('axios/lib/adapters/http');
 
 configure({ adapter: new Adapter() });
 
+let store;
+const routes = ['/', '/product/1', '/products/create'];
+
 describe('<App />', () => {
   global.fetch = nodeFetch;
 
-  let store;
-  const routes = ['/', '/product/1', '/products/create'];
   const mockStore = configureStore([thunk]);
   const state = {
     products: data.products,
@@ -39,73 +40,77 @@ describe('<App />', () => {
     apiMock.get('/products').reply(200, data.products);
 
     // "/products/:id" => Retorna un producto matcheado por su id
-    apiMock.get(/\/products\/\d/).reply(200, (uri, requestBody) => {
-      const idStr = uri.split('/').pop();
-      const id = Number(idStr);
-      return data.products.find((product) => product.id === id);
-    });
-
-    store = mockStore(state);
+    let id = null;
+    apiMock.get((uri) => {
+      id = Number(uri.split('/').pop()); // Number('undefined') => NaN
+      return !!id
+    })
+      .reply(200, (uri, requestBody) => {
+        return data.houses.find((house) => house.id === id) || {};
+      });
   });
 
-  const componentToUse = (route) => {
-    return (
-      <Provider store={store}>
-        <MemoryRouter initialEntries={[route]}>
-          <App />
-        </MemoryRouter>
-      </Provider>
-    );
-  };
-  describe('Nav:', () => {
-    it('Debería ser renderizado en la ruta "/"', () => {
-      const app = mount(componentToUse(routes[0]));
-      expect(app.find(Nav)).toHaveLength(1);
-    });
+  store = mockStore(state);
+});
 
-    it('Debería ser renderizado en la ruta "/product/:id"', () => {
-      const app = mount(componentToUse(routes[1]));
-      expect(app.find(Nav)).toHaveLength(1);
-    });
-    it('Debería ser renderizado en la ruta "/products/create"', () => {
-      const app = mount(componentToUse(routes[2]));
-      expect(app.find(Nav)).toHaveLength(1);
-    });
+const componentToUse = (route) => {
+  return (
+    <Provider store={store}>
+      <MemoryRouter initialEntries={[route]}>
+        <App />
+      </MemoryRouter>
+    </Provider>
+  );
+};
+describe('Nav:', () => {
+  it('Debería ser renderizado en la ruta "/"', () => {
+    const app = mount(componentToUse(routes[0]));
+    expect(app.find(Nav)).toHaveLength(1);
   });
 
-  describe('Home:', () => {
-    it('El componente "Home" se debería renderizar solamente en la ruta "/"', () => {
-      const app = mount(componentToUse(routes[0]));
-      expect(app.find(ProductDetail)).toHaveLength(0);
-      expect(app.find(CreateProduct)).toHaveLength(0);
-      expect(app.find(Home)).toHaveLength(1);
-      expect(app.find(Nav)).toHaveLength(1);
-    });
-    it('El componente "Home" no deberia mostrarse en ninguna otra ruta', () => {
-      const app = mount(componentToUse(routes[1]));
-      expect(app.find(Home)).toHaveLength(0);
-
-      const app2 = mount(componentToUse(routes[2]));
-      expect(app2.find(Home)).toHaveLength(0);
-    });
+  it('Debería ser renderizado en la ruta "/product/:id"', () => {
+    const app = mount(componentToUse(routes[1]));
+    expect(app.find(Nav)).toHaveLength(1);
   });
-
-  describe('ProductDetail:', () => {
-    it('La ruta "/product/:id" deberia mostrar solo el componente ProductDetail', () => {
-      const app = mount(componentToUse(routes[1]));
-      expect(app.find(Home)).toHaveLength(0);
-      expect(app.find(ProductCard)).toHaveLength(0);
-      expect(app.find(ProductDetail)).toHaveLength(1);
-    });
-  });
-
-  describe('CreateProduct:', () => {
-    it('La ruta "/products/create deberia mostrar solo el componente CreateProduct"', () => {
-      const app = mount(componentToUse(routes[2]));
-      expect(app.find(CreateProduct)).toHaveLength(1);
-      expect(app.find(ProductCard)).toHaveLength(0);
-      expect(app.find(Nav)).toHaveLength(1);
-      expect(app.find(Home)).toHaveLength(0);
-    });
+  it('Debería ser renderizado en la ruta "/products/create"', () => {
+    const app = mount(componentToUse(routes[2]));
+    expect(app.find(Nav)).toHaveLength(1);
   });
 });
+
+describe('Home:', () => {
+  it('El componente "Home" se debería renderizar solamente en la ruta "/"', () => {
+    const app = mount(componentToUse(routes[0]));
+    expect(app.find(ProductDetail)).toHaveLength(0);
+    expect(app.find(CreateProduct)).toHaveLength(0);
+    expect(app.find(Home)).toHaveLength(1);
+    expect(app.find(Nav)).toHaveLength(1);
+  });
+  it('El componente "Home" no deberia mostrarse en ninguna otra ruta', () => {
+    const app = mount(componentToUse(routes[1]));
+    expect(app.find(Home)).toHaveLength(0);
+
+    const app2 = mount(componentToUse(routes[2]));
+    expect(app2.find(Home)).toHaveLength(0);
+  });
+});
+
+describe('ProductDetail:', () => {
+  it('La ruta "/product/:id" deberia mostrar solo el componente ProductDetail', () => {
+    const app = mount(componentToUse(routes[1]));
+    expect(app.find(Home)).toHaveLength(0);
+    expect(app.find(ProductCard)).toHaveLength(0);
+    expect(app.find(ProductDetail)).toHaveLength(1);
+  });
+});
+
+describe('CreateProduct:', () => {
+  it('La ruta "/products/create deberia mostrar solo el componente CreateProduct"', () => {
+    const app = mount(componentToUse(routes[2]));
+    expect(app.find(CreateProduct)).toHaveLength(1);
+    expect(app.find(ProductCard)).toHaveLength(0);
+    expect(app.find(Nav)).toHaveLength(1);
+    expect(app.find(Home)).toHaveLength(0);
+  });
+});
+

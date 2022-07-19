@@ -32,3 +32,5 @@ export const getProductDetail = (id) => {
 export const createProduct = undefined;
 
 export const deleteProduct = undefined;
+
+//todo. Simplemente invocar las peticiones que pide, y en las 2 últimas devolver los "action" correspondientes.
